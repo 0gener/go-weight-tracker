@@ -23,6 +23,14 @@ var (
 	keyFile  = "" // required if tls enabled
 )
 
+var (
+	mysqlHost     = "localhost"
+	mysqlPort     = 3306
+	mysqlSchema   = "weight_tracker"
+	mysqlUser     = "root"
+	mysqlPassword = "123456"
+)
+
 var db2 *gorm.DB
 
 type server struct {
@@ -63,7 +71,9 @@ func main() {
 func connectMySQL() {
 	log.Println("connecting to mysql...")
 
-	db, err := gorm.Open(mysql.Open("root:123456@tcp(localhost:3306)/weight_tracker?charset=utf8mb4&parseTime=True"), &gorm.Config{})
+	dbURL := fmt.Sprintf("%v:%v@tcp(%v:%d)/%v?charset=utf8mb4&parseTime=True", mysqlUser, mysqlPassword, mysqlHost, mysqlPort, mysqlSchema)
+
+	db, err := gorm.Open(mysql.Open(dbURL), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("failed connect to mysql: %v\n", err)
 	}
