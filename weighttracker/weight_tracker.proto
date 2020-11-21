@@ -15,5 +15,6 @@ message AddRecordResponse {
 }
 
 message Record {
-    float weight = 1;
+    uint64 id = 1;
+    float weight = 2;
 }

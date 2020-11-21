@@ -93,5 +93,5 @@ var _WeightTracker_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "weight_tracker.proto",
+	Metadata: "weighttracker/weight_tracker.proto",
 }

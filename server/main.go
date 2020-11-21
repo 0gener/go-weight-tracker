@@ -38,14 +38,17 @@ type Record struct {
 func (*server) AddRecord(ctx context.Context, req *weighttracker.AddRecordRequest) (*weighttracker.AddRecordResponse, error) {
 	log.Printf("called AddRecord: %v\n", req)
 
-	record := req.GetRecord()
+	record := Record{
+		Weight: req.GetRecord().GetWeight(),
+	}
 
-	db2.Create(&Record{
-		Weight: record.GetWeight(),
-	})
+	db2.Create(&record)
 
 	return &weighttracker.AddRecordResponse{
-		Record: req.GetRecord(),
+		Record: &weighttracker.Record{
+			Id:     uint64(record.ID),
+			Weight: record.Weight,
+		},
 	}, nil
 }
 
