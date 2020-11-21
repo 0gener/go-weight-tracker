@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "github.com/0gener/go-weight-tracker/weighttracker";
+
+service WeightTracker {
+    rpc AddRecord (AddRecordRequest) returns (AddRecordResponse);
+}
+
+message AddRecordRequest {
+    Record record = 1;
+}
+
+message AddRecordResponse {
+    Record record = 1;
+}
+
+message Record {
+    float weight = 1;
+}
