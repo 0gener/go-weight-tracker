@@ -52,7 +52,10 @@ message DeleteRecordRequest {
 
 message DeleteRecordResponse {}
 
-message ListRecordsRequest {}
+message ListRecordsRequest {
+    google.protobuf.Timestamp weighted_at_from = 1;
+    google.protobuf.Timestamp weighted_at_to = 2;
+}
 
 message ListRecordsResponse {
     Record record = 1;

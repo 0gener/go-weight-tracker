@@ -144,8 +144,25 @@ func (*server) DeleteRecord(ctx context.Context, req *weighttracker.DeleteRecord
 func (*server) ListRecords(req *weighttracker.ListRecordsRequest, stream weighttracker.WeightTracker_ListRecordsServer) error {
 	log.Printf("ListRecords: %v\n", req)
 
+	whereQueryStr := "1"
+	whereQueryArgs := make([]interface{}, 0)
+	if req.GetWeightedAtFrom() != nil {
+		whereQueryStr += " AND weighted_at > ?"
+		whereQueryArgs = append(whereQueryArgs, req.GetWeightedAtFrom().AsTime())
+	}
+
+	if req.GetWeightedAtTo() != nil {
+		whereQueryStr += " AND weighted_at < ?"
+		whereQueryArgs = append(whereQueryArgs, req.GetWeightedAtTo().AsTime())
+	}
+
 	records := []Record{}
-	res := db2.Find(&records)
+	var res *gorm.DB
+	if len(whereQueryArgs) == 0 {
+		res = db2.Find(&records)
+	} else {
+		res = db2.Where(whereQueryStr, whereQueryArgs...).Find(&records)
+	}
 	if res.Error != nil {
 		return status.Errorf(codes.Internal, fmt.Sprintf("error while listing records from db: %v", res.Error))
 	}

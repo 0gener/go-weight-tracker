@@ -107,7 +107,12 @@ func deleteRecord(c weighttracker.WeightTrackerClient, recordID uint64) {
 func listRecords(c weighttracker.WeightTrackerClient) {
 	fmt.Println("calling ListRecord")
 
-	stream, err := c.ListRecords(context.Background(), &weighttracker.ListRecordsRequest{})
+	// from, _ := time.Parse("2006-01-02", "2020-10-10")
+
+	stream, err := c.ListRecords(context.Background(), &weighttracker.ListRecordsRequest{
+		// WeightedAtFrom: timestamppb.New(from),
+		WeightedAtTo: timestamppb.Now(),
+	})
 	if err != nil {
 		log.Printf("failed to ListRecords: %v\n", err)
 	}
