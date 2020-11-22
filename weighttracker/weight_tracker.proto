@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "github.com/0gener/go-weight-tracker/weighttracker";
 
 service WeightTracker {
@@ -17,4 +19,5 @@ message AddRecordResponse {
 message Record {
     uint64 id = 1;
     float weight = 2;
+    google.protobuf.Timestamp weighted_at = 3;
 }

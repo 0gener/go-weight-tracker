@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/0gener/go-weight-tracker/weighttracker"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -41,7 +43,8 @@ func main() {
 	c := weighttracker.NewWeightTrackerClient(conn)
 
 	record := &weighttracker.Record{
-		Weight: 68,
+		Weight:     68,
+		WeightedAt: timestamppb.New(time.Date(2019, 10, 10, 9, 12, 56, 100, time.Local)),
 	}
 
 	res, err := c.AddRecord(context.Background(), &weighttracker.AddRecordRequest{Record: record})

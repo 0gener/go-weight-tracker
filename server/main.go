@@ -7,10 +7,12 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/0gener/go-weight-tracker/weighttracker"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -40,22 +42,32 @@ type server struct {
 // Record is ...
 type Record struct {
 	gorm.Model
-	Weight float32 `gorm:"type:decimal(4,2);not null"`
+	Weight     float32   `gorm:"type:decimal(4,2);not null"`
+	WeightedAt time.Time `gorm:"not null"`
 }
 
 func (*server) AddRecord(ctx context.Context, req *weighttracker.AddRecordRequest) (*weighttracker.AddRecordResponse, error) {
 	log.Printf("called AddRecord: %v\n", req)
 
+	var recordDatetime time.Time
+	if req.Record.WeightedAt != nil {
+		recordDatetime = req.GetRecord().WeightedAt.AsTime()
+	} else {
+		recordDatetime = time.Now()
+	}
+
 	record := Record{
-		Weight: req.GetRecord().GetWeight(),
+		Weight:     req.GetRecord().GetWeight(),
+		WeightedAt: recordDatetime,
 	}
 
 	db2.Create(&record)
 
 	return &weighttracker.AddRecordResponse{
 		Record: &weighttracker.Record{
-			Id:     uint64(record.ID),
-			Weight: record.Weight,
+			Id:         uint64(record.ID),
+			Weight:     record.Weight,
+			WeightedAt: timestamppb.New(record.WeightedAt),
 		},
 	}, nil
 }
