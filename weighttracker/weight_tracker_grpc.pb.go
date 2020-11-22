@@ -26,6 +26,8 @@ type WeightTrackerClient interface {
 	UpdateRecord(ctx context.Context, in *UpdateRecordRequest, opts ...grpc.CallOption) (*UpdateRecordResponse, error)
 	// Deletes a record using a record_id. Returns `NOT_FOUND` if the record does not exist.
 	DeleteRecord(ctx context.Context, in *DeleteRecordRequest, opts ...grpc.CallOption) (*DeleteRecordResponse, error)
+	// Lists all records.
+	ListRecords(ctx context.Context, in *ListRecordsRequest, opts ...grpc.CallOption) (WeightTracker_ListRecordsClient, error)
 }
 
 type weightTrackerClient struct {
@@ -72,6 +74,38 @@ func (c *weightTrackerClient) DeleteRecord(ctx context.Context, in *DeleteRecord
 	return out, nil
 }
 
+func (c *weightTrackerClient) ListRecords(ctx context.Context, in *ListRecordsRequest, opts ...grpc.CallOption) (WeightTracker_ListRecordsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_WeightTracker_serviceDesc.Streams[0], "/WeightTracker/ListRecords", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &weightTrackerListRecordsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type WeightTracker_ListRecordsClient interface {
+	Recv() (*ListRecordsResponse, error)
+	grpc.ClientStream
+}
+
+type weightTrackerListRecordsClient struct {
+	grpc.ClientStream
+}
+
+func (x *weightTrackerListRecordsClient) Recv() (*ListRecordsResponse, error) {
+	m := new(ListRecordsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // WeightTrackerServer is the server API for WeightTracker service.
 // All implementations must embed UnimplementedWeightTrackerServer
 // for forward compatibility
@@ -85,6 +119,8 @@ type WeightTrackerServer interface {
 	UpdateRecord(context.Context, *UpdateRecordRequest) (*UpdateRecordResponse, error)
 	// Deletes a record using a record_id. Returns `NOT_FOUND` if the record does not exist.
 	DeleteRecord(context.Context, *DeleteRecordRequest) (*DeleteRecordResponse, error)
+	// Lists all records.
+	ListRecords(*ListRecordsRequest, WeightTracker_ListRecordsServer) error
 	mustEmbedUnimplementedWeightTrackerServer()
 }
 
@@ -103,6 +139,9 @@ func (UnimplementedWeightTrackerServer) UpdateRecord(context.Context, *UpdateRec
 }
 func (UnimplementedWeightTrackerServer) DeleteRecord(context.Context, *DeleteRecordRequest) (*DeleteRecordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteRecord not implemented")
+}
+func (UnimplementedWeightTrackerServer) ListRecords(*ListRecordsRequest, WeightTracker_ListRecordsServer) error {
+	return status.Errorf(codes.Unimplemented, "method ListRecords not implemented")
 }
 func (UnimplementedWeightTrackerServer) mustEmbedUnimplementedWeightTrackerServer() {}
 
@@ -189,6 +228,27 @@ func _WeightTracker_DeleteRecord_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WeightTracker_ListRecords_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ListRecordsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(WeightTrackerServer).ListRecords(m, &weightTrackerListRecordsServer{stream})
+}
+
+type WeightTracker_ListRecordsServer interface {
+	Send(*ListRecordsResponse) error
+	grpc.ServerStream
+}
+
+type weightTrackerListRecordsServer struct {
+	grpc.ServerStream
+}
+
+func (x *weightTrackerListRecordsServer) Send(m *ListRecordsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 var _WeightTracker_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "WeightTracker",
 	HandlerType: (*WeightTrackerServer)(nil),
@@ -210,6 +270,12 @@ var _WeightTracker_serviceDesc = grpc.ServiceDesc{
 			Handler:    _WeightTracker_DeleteRecord_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ListRecords",
+			Handler:       _WeightTracker_ListRecords_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "weighttracker/weight_tracker.proto",
 }

@@ -141,6 +141,24 @@ func (*server) DeleteRecord(ctx context.Context, req *weighttracker.DeleteRecord
 	return &weighttracker.DeleteRecordResponse{}, nil
 }
 
+func (*server) ListRecords(req *weighttracker.ListRecordsRequest, stream weighttracker.WeightTracker_ListRecordsServer) error {
+	log.Printf("ListRecords: %v\n", req)
+
+	records := []Record{}
+	res := db2.Find(&records)
+	if res.Error != nil {
+		return status.Errorf(codes.Internal, fmt.Sprintf("error while listing records from db: %v", res.Error))
+	}
+
+	for _, record := range records {
+		stream.Send(&weighttracker.ListRecordsResponse{
+			Record: dataToRecordPb(record),
+		})
+	}
+
+	return nil
+}
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 

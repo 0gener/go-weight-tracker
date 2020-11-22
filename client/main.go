@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"time"
 
@@ -43,9 +44,10 @@ func main() {
 	c := weighttracker.NewWeightTrackerClient(conn)
 
 	// createRecord(c)
-	readRecord(c, 2)
+	// readRecord(c, 2)
 	// updateRecord(c, 1)
 	// deleteRecord(c, 1)
+	listRecords(c)
 }
 
 func createRecord(c weighttracker.WeightTrackerClient) {
@@ -100,4 +102,25 @@ func deleteRecord(c weighttracker.WeightTrackerClient, recordID uint64) {
 	}
 
 	fmt.Printf("DeleteRecord result: %v\n", res)
+}
+
+func listRecords(c weighttracker.WeightTrackerClient) {
+	fmt.Println("calling ListRecord")
+
+	stream, err := c.ListRecords(context.Background(), &weighttracker.ListRecordsRequest{})
+	if err != nil {
+		log.Printf("failed to ListRecords: %v\n", err)
+	}
+
+	for {
+		res, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("something happened: %v", err)
+		}
+
+		fmt.Println(res.GetRecord())
+	}
 }
