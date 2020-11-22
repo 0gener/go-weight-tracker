@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -48,8 +49,8 @@ type Record struct {
 	WeightedAt time.Time `gorm:"not null"`
 }
 
-func (*server) AddRecord(ctx context.Context, req *weighttracker.AddRecordRequest) (*weighttracker.AddRecordResponse, error) {
-	log.Printf("called AddRecord: %v\n", req.GetRecord().GetWeight())
+func (*server) CreateRecord(ctx context.Context, req *weighttracker.CreateRecordRequest) (*weighttracker.CreateRecordResponse, error) {
+	log.Printf("called CreateRecord: %v\n", req.GetRecord().GetWeight())
 
 	if req.GetRecord().GetWeight() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "weight must be greater than 0")
@@ -72,7 +73,7 @@ func (*server) AddRecord(ctx context.Context, req *weighttracker.AddRecordReques
 		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error while inserting record on db: %v", res.Error))
 	}
 
-	return &weighttracker.AddRecordResponse{
+	return &weighttracker.CreateRecordResponse{
 		Record: &weighttracker.Record{
 			Id:         uint64(record.ID),
 			Weight:     record.Weight,
@@ -81,10 +82,26 @@ func (*server) AddRecord(ctx context.Context, req *weighttracker.AddRecordReques
 	}, nil
 }
 
-func (*server) UpdateRecord(ctx context.Context, req *weighttracker.UpdateRecordRequest) (*weighttracker.UpdateRecordResponse, error) {
-	log.Printf("called UpdateRecord: %v\n", req)
+func (*server) ReadRecord(ctx context.Context, req *weighttracker.ReadRecordRequest) (*weighttracker.ReadRecordResponse, error) {
+	recordID := req.GetRecordId()
 
-	return nil, nil
+	record := Record{}
+	res := db2.First(&record, recordID)
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, status.Errorf(codes.NotFound, fmt.Sprintf("no record found with id = %d", record.ID))
+		} else {
+			return nil, status.Errorf(codes.Internal, fmt.Sprintf("error while reading record from db: %v", res.Error))
+		}
+	}
+
+	return &weighttracker.ReadRecordResponse{
+		Record: &weighttracker.Record{
+			Id:         uint64(record.ID),
+			Weight:     record.Weight,
+			WeightedAt: timestamppb.New(record.WeightedAt),
+		},
+	}, nil
 }
 
 func main() {
