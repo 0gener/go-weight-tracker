@@ -24,6 +24,8 @@ type WeightTrackerClient interface {
 	ReadRecord(ctx context.Context, in *ReadRecordRequest, opts ...grpc.CallOption) (*ReadRecordResponse, error)
 	// Updates a record. Returns `NOT_FOUND` if the record does not exist.
 	UpdateRecord(ctx context.Context, in *UpdateRecordRequest, opts ...grpc.CallOption) (*UpdateRecordResponse, error)
+	// Deletes a record using a record_id. Returns `NOT_FOUND` if the record does not exist.
+	DeleteRecord(ctx context.Context, in *DeleteRecordRequest, opts ...grpc.CallOption) (*DeleteRecordResponse, error)
 }
 
 type weightTrackerClient struct {
@@ -61,6 +63,15 @@ func (c *weightTrackerClient) UpdateRecord(ctx context.Context, in *UpdateRecord
 	return out, nil
 }
 
+func (c *weightTrackerClient) DeleteRecord(ctx context.Context, in *DeleteRecordRequest, opts ...grpc.CallOption) (*DeleteRecordResponse, error) {
+	out := new(DeleteRecordResponse)
+	err := c.cc.Invoke(ctx, "/WeightTracker/DeleteRecord", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WeightTrackerServer is the server API for WeightTracker service.
 // All implementations must embed UnimplementedWeightTrackerServer
 // for forward compatibility
@@ -72,6 +83,8 @@ type WeightTrackerServer interface {
 	ReadRecord(context.Context, *ReadRecordRequest) (*ReadRecordResponse, error)
 	// Updates a record. Returns `NOT_FOUND` if the record does not exist.
 	UpdateRecord(context.Context, *UpdateRecordRequest) (*UpdateRecordResponse, error)
+	// Deletes a record using a record_id. Returns `NOT_FOUND` if the record does not exist.
+	DeleteRecord(context.Context, *DeleteRecordRequest) (*DeleteRecordResponse, error)
 	mustEmbedUnimplementedWeightTrackerServer()
 }
 
@@ -87,6 +100,9 @@ func (UnimplementedWeightTrackerServer) ReadRecord(context.Context, *ReadRecordR
 }
 func (UnimplementedWeightTrackerServer) UpdateRecord(context.Context, *UpdateRecordRequest) (*UpdateRecordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateRecord not implemented")
+}
+func (UnimplementedWeightTrackerServer) DeleteRecord(context.Context, *DeleteRecordRequest) (*DeleteRecordResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRecord not implemented")
 }
 func (UnimplementedWeightTrackerServer) mustEmbedUnimplementedWeightTrackerServer() {}
 
@@ -155,6 +171,24 @@ func _WeightTracker_UpdateRecord_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WeightTracker_DeleteRecord_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRecordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WeightTrackerServer).DeleteRecord(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/WeightTracker/DeleteRecord",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WeightTrackerServer).DeleteRecord(ctx, req.(*DeleteRecordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _WeightTracker_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "WeightTracker",
 	HandlerType: (*WeightTrackerServer)(nil),
@@ -170,6 +204,10 @@ var _WeightTracker_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateRecord",
 			Handler:    _WeightTracker_UpdateRecord_Handler,
+		},
+		{
+			MethodName: "DeleteRecord",
+			Handler:    _WeightTracker_DeleteRecord_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

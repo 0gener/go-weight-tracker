@@ -42,9 +42,10 @@ func main() {
 
 	c := weighttracker.NewWeightTrackerClient(conn)
 
-	//createRecord(c)
-	//readRecord(c, 1)
-	updateRecord(c, 1)
+	// createRecord(c)
+	readRecord(c, 2)
+	// updateRecord(c, 1)
+	// deleteRecord(c, 1)
 }
 
 func createRecord(c weighttracker.WeightTrackerClient) {
@@ -88,4 +89,15 @@ func updateRecord(c weighttracker.WeightTrackerClient, recordID uint64) {
 	}
 
 	fmt.Printf("UpdateRecord result: %v\n", res)
+}
+
+func deleteRecord(c weighttracker.WeightTrackerClient, recordID uint64) {
+	fmt.Println("calling DeleteRecord")
+
+	res, err := c.DeleteRecord(context.Background(), &weighttracker.DeleteRecordRequest{RecordId: recordID})
+	if err != nil {
+		log.Printf("failed to DeleteRecord: %v\n", err)
+	}
+
+	fmt.Printf("DeleteRecord result: %v\n", res)
 }

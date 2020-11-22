@@ -50,7 +50,7 @@ type Record struct {
 }
 
 func (*server) CreateRecord(ctx context.Context, req *weighttracker.CreateRecordRequest) (*weighttracker.CreateRecordResponse, error) {
-	log.Printf("called CreateRecord: %v\n", req)
+	log.Printf("CreateRecord: %v\n", req)
 
 	if req.GetRecord().GetWeight() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "weight must be greater than 0")
@@ -79,7 +79,7 @@ func (*server) CreateRecord(ctx context.Context, req *weighttracker.CreateRecord
 }
 
 func (*server) ReadRecord(ctx context.Context, req *weighttracker.ReadRecordRequest) (*weighttracker.ReadRecordResponse, error) {
-	log.Printf("called ReadRecord: %v\n", req)
+	log.Printf("ReadRecord: %v\n", req)
 
 	recordID := req.GetRecordId()
 
@@ -99,7 +99,7 @@ func (*server) ReadRecord(ctx context.Context, req *weighttracker.ReadRecordRequ
 }
 
 func (*server) UpdateRecord(ctx context.Context, req *weighttracker.UpdateRecordRequest) (*weighttracker.UpdateRecordResponse, error) {
-	log.Printf("called UpdateRecord: %v\n", req)
+	log.Printf("UpdateRecord: %v\n", req)
 
 	var recordDatetime time.Time
 	if req.GetRecord().GetWeightedAt() != nil {
@@ -122,6 +122,23 @@ func (*server) UpdateRecord(ctx context.Context, req *weighttracker.UpdateRecord
 	return &weighttracker.UpdateRecordResponse{
 		Record: dataToRecordPb(record),
 	}, nil
+}
+
+func (*server) DeleteRecord(ctx context.Context, req *weighttracker.DeleteRecordRequest) (*weighttracker.DeleteRecordResponse, error) {
+	log.Printf("DeleteRecord: %v\n", req)
+
+	recordID := req.GetRecordId()
+
+	res := db2.Delete(&Record{}, recordID)
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, status.Errorf(codes.NotFound, fmt.Sprintf("no record found with id = %d", recordID))
+		}
+
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error while deleting record from db: %v", res.Error))
+	}
+
+	return &weighttracker.DeleteRecordResponse{}, nil
 }
 
 func main() {

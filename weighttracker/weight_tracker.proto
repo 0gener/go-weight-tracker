@@ -14,6 +14,9 @@ service WeightTracker {
 
     // Updates a record. Returns `NOT_FOUND` if the record does not exist.
     rpc UpdateRecord (UpdateRecordRequest) returns (UpdateRecordResponse);
+
+    // Deletes a record using a record_id. Returns `NOT_FOUND` if the record does not exist.
+    rpc DeleteRecord (DeleteRecordRequest) returns (DeleteRecordResponse);
 }
 
 message CreateRecordRequest {
@@ -39,6 +42,12 @@ message UpdateRecordRequest {
 message UpdateRecordResponse {
     Record record = 1;
 }
+
+message DeleteRecordRequest {
+    uint64 record_id = 1;
+}
+
+message DeleteRecordResponse {}
 
 message Record {
     uint64 id = 1;
