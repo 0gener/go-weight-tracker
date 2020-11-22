@@ -17,7 +17,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WeightTrackerClient interface {
+	// Adds a weight record. Returns `INVALID_ARGUMENT` if weight is less or equals to 0.
+	// If weight_at is not sent, will use current datetime.
 	AddRecord(ctx context.Context, in *AddRecordRequest, opts ...grpc.CallOption) (*AddRecordResponse, error)
+	UpdateRecord(ctx context.Context, in *UpdateRecordRequest, opts ...grpc.CallOption) (*UpdateRecordResponse, error)
 }
 
 type weightTrackerClient struct {
@@ -37,11 +40,23 @@ func (c *weightTrackerClient) AddRecord(ctx context.Context, in *AddRecordReques
 	return out, nil
 }
 
+func (c *weightTrackerClient) UpdateRecord(ctx context.Context, in *UpdateRecordRequest, opts ...grpc.CallOption) (*UpdateRecordResponse, error) {
+	out := new(UpdateRecordResponse)
+	err := c.cc.Invoke(ctx, "/WeightTracker/UpdateRecord", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WeightTrackerServer is the server API for WeightTracker service.
 // All implementations must embed UnimplementedWeightTrackerServer
 // for forward compatibility
 type WeightTrackerServer interface {
+	// Adds a weight record. Returns `INVALID_ARGUMENT` if weight is less or equals to 0.
+	// If weight_at is not sent, will use current datetime.
 	AddRecord(context.Context, *AddRecordRequest) (*AddRecordResponse, error)
+	UpdateRecord(context.Context, *UpdateRecordRequest) (*UpdateRecordResponse, error)
 	mustEmbedUnimplementedWeightTrackerServer()
 }
 
@@ -51,6 +66,9 @@ type UnimplementedWeightTrackerServer struct {
 
 func (UnimplementedWeightTrackerServer) AddRecord(context.Context, *AddRecordRequest) (*AddRecordResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddRecord not implemented")
+}
+func (UnimplementedWeightTrackerServer) UpdateRecord(context.Context, *UpdateRecordRequest) (*UpdateRecordResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateRecord not implemented")
 }
 func (UnimplementedWeightTrackerServer) mustEmbedUnimplementedWeightTrackerServer() {}
 
@@ -83,6 +101,24 @@ func _WeightTracker_AddRecord_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WeightTracker_UpdateRecord_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRecordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WeightTrackerServer).UpdateRecord(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/WeightTracker/UpdateRecord",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WeightTrackerServer).UpdateRecord(ctx, req.(*UpdateRecordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _WeightTracker_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "WeightTracker",
 	HandlerType: (*WeightTrackerServer)(nil),
@@ -90,6 +126,10 @@ var _WeightTracker_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddRecord",
 			Handler:    _WeightTracker_AddRecord_Handler,
+		},
+		{
+			MethodName: "UpdateRecord",
+			Handler:    _WeightTracker_UpdateRecord_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

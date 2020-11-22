@@ -5,7 +5,12 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/0gener/go-weight-tracker/weighttracker";
 
 service WeightTracker {
+    // Adds a weight record. Returns `INVALID_ARGUMENT` if weight is less or equals to 0.
+    // If weight_at is not sent, will use current datetime.
     rpc AddRecord (AddRecordRequest) returns (AddRecordResponse);
+
+    
+    rpc UpdateRecord (UpdateRecordRequest) returns (UpdateRecordResponse);
 }
 
 message AddRecordRequest {
@@ -13,6 +18,14 @@ message AddRecordRequest {
 }
 
 message AddRecordResponse {
+    Record record = 1;
+}
+
+message UpdateRecordRequest {
+    Record record = 1;
+}
+
+message UpdateRecordResponse {
     Record record = 1;
 }
 

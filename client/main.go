@@ -43,7 +43,6 @@ func main() {
 	c := weighttracker.NewWeightTrackerClient(conn)
 
 	record := &weighttracker.Record{
-		Weight:     68,
 		WeightedAt: timestamppb.New(time.Date(2019, 10, 10, 9, 12, 56, 100, time.Local)),
 	}
 

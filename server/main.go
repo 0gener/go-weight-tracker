@@ -11,7 +11,9 @@ import (
 
 	"github.com/0gener/go-weight-tracker/weighttracker"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -47,11 +49,15 @@ type Record struct {
 }
 
 func (*server) AddRecord(ctx context.Context, req *weighttracker.AddRecordRequest) (*weighttracker.AddRecordResponse, error) {
-	log.Printf("called AddRecord: %v\n", req)
+	log.Printf("called AddRecord: %v\n", req.GetRecord().GetWeight())
+
+	if req.GetRecord().GetWeight() <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "weight must be greater than 0")
+	}
 
 	var recordDatetime time.Time
-	if req.Record.WeightedAt != nil {
-		recordDatetime = req.GetRecord().WeightedAt.AsTime()
+	if req.GetRecord().GetWeightedAt() != nil {
+		recordDatetime = req.GetRecord().GetWeightedAt().AsTime()
 	} else {
 		recordDatetime = time.Now()
 	}
@@ -61,7 +67,10 @@ func (*server) AddRecord(ctx context.Context, req *weighttracker.AddRecordReques
 		WeightedAt: recordDatetime,
 	}
 
-	db2.Create(&record)
+	res := db2.Create(&record)
+	if res.Error != nil {
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error while inserting record on db: %v", res.Error))
+	}
 
 	return &weighttracker.AddRecordResponse{
 		Record: &weighttracker.Record{
@@ -70,6 +79,12 @@ func (*server) AddRecord(ctx context.Context, req *weighttracker.AddRecordReques
 			WeightedAt: timestamppb.New(record.WeightedAt),
 		},
 	}, nil
+}
+
+func (*server) UpdateRecord(ctx context.Context, req *weighttracker.UpdateRecordRequest) (*weighttracker.UpdateRecordResponse, error) {
+	log.Printf("called UpdateRecord: %v\n", req)
+
+	return nil, nil
 }
 
 func main() {
