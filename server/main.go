@@ -50,7 +50,7 @@ type Record struct {
 }
 
 func (*server) CreateRecord(ctx context.Context, req *weighttracker.CreateRecordRequest) (*weighttracker.CreateRecordResponse, error) {
-	log.Printf("called CreateRecord: %v\n", req.GetRecord().GetWeight())
+	log.Printf("called CreateRecord: %v\n", req)
 
 	if req.GetRecord().GetWeight() <= 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "weight must be greater than 0")
@@ -74,15 +74,13 @@ func (*server) CreateRecord(ctx context.Context, req *weighttracker.CreateRecord
 	}
 
 	return &weighttracker.CreateRecordResponse{
-		Record: &weighttracker.Record{
-			Id:         uint64(record.ID),
-			Weight:     record.Weight,
-			WeightedAt: timestamppb.New(record.WeightedAt),
-		},
+		Record: dataToRecordPb(record),
 	}, nil
 }
 
 func (*server) ReadRecord(ctx context.Context, req *weighttracker.ReadRecordRequest) (*weighttracker.ReadRecordResponse, error) {
+	log.Printf("called ReadRecord: %v\n", req)
+
 	recordID := req.GetRecordId()
 
 	record := Record{}
@@ -90,17 +88,39 @@ func (*server) ReadRecord(ctx context.Context, req *weighttracker.ReadRecordRequ
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return nil, status.Errorf(codes.NotFound, fmt.Sprintf("no record found with id = %d", record.ID))
-		} else {
-			return nil, status.Errorf(codes.Internal, fmt.Sprintf("error while reading record from db: %v", res.Error))
 		}
+
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error while reading record from db: %v", res.Error))
 	}
 
 	return &weighttracker.ReadRecordResponse{
-		Record: &weighttracker.Record{
-			Id:         uint64(record.ID),
-			Weight:     record.Weight,
-			WeightedAt: timestamppb.New(record.WeightedAt),
-		},
+		Record: dataToRecordPb(record),
+	}, nil
+}
+
+func (*server) UpdateRecord(ctx context.Context, req *weighttracker.UpdateRecordRequest) (*weighttracker.UpdateRecordResponse, error) {
+	log.Printf("called UpdateRecord: %v\n", req)
+
+	var recordDatetime time.Time
+	if req.GetRecord().GetWeightedAt() != nil {
+		recordDatetime = req.GetRecord().GetWeightedAt().AsTime()
+	}
+
+	record := Record{}
+	res := db2.Model(&record).Where("id = ?", req.GetRecord().GetId()).Updates(Record{
+		Weight:     req.GetRecord().GetWeight(),
+		WeightedAt: recordDatetime,
+	})
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, status.Errorf(codes.NotFound, fmt.Sprintf("no record found with id = %d", req.GetRecord().GetId()))
+		}
+
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("error while updating record from db: %v", res.Error))
+	}
+
+	return &weighttracker.UpdateRecordResponse{
+		Record: dataToRecordPb(record),
 	}, nil
 }
 
@@ -166,4 +186,12 @@ func startServer() {
 
 	sv.Stop()
 	lis.Close()
+}
+
+func dataToRecordPb(rec Record) *weighttracker.Record {
+	return &weighttracker.Record{
+		Id:         uint64(rec.ID),
+		Weight:     rec.Weight,
+		WeightedAt: timestamppb.New(rec.WeightedAt),
+	}
 }

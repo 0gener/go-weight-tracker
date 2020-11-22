@@ -42,8 +42,9 @@ func main() {
 
 	c := weighttracker.NewWeightTrackerClient(conn)
 
-	// createRecord(c)
-	readRecord(c, 1)
+	//createRecord(c)
+	//readRecord(c, 1)
+	updateRecord(c, 1)
 }
 
 func createRecord(c weighttracker.WeightTrackerClient) {
@@ -71,4 +72,20 @@ func readRecord(c weighttracker.WeightTrackerClient, recordID uint64) {
 	}
 
 	fmt.Printf("ReadRecord result: %v\n", res)
+}
+
+func updateRecord(c weighttracker.WeightTrackerClient, recordID uint64) {
+	fmt.Println("calling UpdateRecord")
+
+	res, err := c.UpdateRecord(context.Background(), &weighttracker.UpdateRecordRequest{
+		Record: &weighttracker.Record{
+			Id:     recordID,
+			Weight: 63,
+		},
+	})
+	if err != nil {
+		log.Printf("failed to UpdateRecord: %v\n", err)
+	}
+
+	fmt.Printf("UpdateRecord result: %v\n", res)
 }

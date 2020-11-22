@@ -11,6 +11,9 @@ service WeightTracker {
 
     // Reads a record using a record_id. Returns `NOT_FOUND` if the record does not exist.
     rpc ReadRecord (ReadRecordRequest) returns (ReadRecordResponse);
+
+    // Updates a record. Returns `NOT_FOUND` if the record does not exist.
+    rpc UpdateRecord (UpdateRecordRequest) returns (UpdateRecordResponse);
 }
 
 message CreateRecordRequest {
@@ -26,6 +29,14 @@ message ReadRecordRequest {
 }
 
 message ReadRecordResponse {
+    Record record = 1;
+}
+
+message UpdateRecordRequest {
+    Record record = 1;
+}
+
+message UpdateRecordResponse {
     Record record = 1;
 }
 
