@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/0gener/go-weight-tracker/server/config"
 	"github.com/0gener/go-weight-tracker/weighttracker"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -18,22 +19,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-)
-
-var (
-	host     = "0.0.0.0"
-	port     = 50051
-	tls      = false
-	certFile = "" // required if tls enabled
-	keyFile  = "" // required if tls enabled
-)
-
-var (
-	mysqlHost     = "localhost"
-	mysqlPort     = 3306
-	mysqlSchema   = "weight_tracker"
-	mysqlUser     = "root"
-	mysqlPassword = "123456"
 )
 
 var db2 *gorm.DB
@@ -179,15 +164,19 @@ func (*server) ListRecords(req *weighttracker.ListRecordsRequest, stream weightt
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	connectMySQL()
+	conf := config.LoadConfig()
 
-	startServer()
+	fmt.Println(conf)
+
+	connectMySQL(conf.MySQL)
+
+	startServer(conf.Server)
 }
 
-func connectMySQL() {
+func connectMySQL(mysqlConfig config.MySQLConfig) {
 	log.Println("connecting to mysql...")
 
-	dbURL := fmt.Sprintf("%v:%v@tcp(%v:%d)/%v?charset=utf8mb4&parseTime=True", mysqlUser, mysqlPassword, mysqlHost, mysqlPort, mysqlSchema)
+	dbURL := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8mb4&parseTime=True", mysqlConfig.User, mysqlConfig.Password, mysqlConfig.Host, mysqlConfig.Port, mysqlConfig.Schema)
 
 	db, err := gorm.Open(mysql.Open(dbURL), &gorm.Config{})
 	if err != nil {
@@ -199,13 +188,13 @@ func connectMySQL() {
 	db2.AutoMigrate(&Record{})
 }
 
-func startServer() {
-	log.Printf("starting server on port %d...\n", port)
+func startServer(serverConfig config.ServerConfig) {
+	log.Printf("starting server on port %v...\n", serverConfig.Port)
 
 	opts := []grpc.ServerOption{}
 
-	if tls {
-		creds, sslErr := credentials.NewServerTLSFromFile(certFile, keyFile)
+	if serverConfig.TLS.Enabled {
+		creds, sslErr := credentials.NewServerTLSFromFile(serverConfig.TLS.CertFile, serverConfig.TLS.KeyFile)
 
 		if sslErr != nil {
 			log.Fatalf("failed to load certificates: %v\n", sslErr)
@@ -214,7 +203,7 @@ func startServer() {
 		opts = append(opts, grpc.Creds(creds))
 	}
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("%v:%d", host, port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("%v:%v", serverConfig.Host, serverConfig.Port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v\n", err)
 	}
